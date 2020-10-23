@@ -1,6 +1,6 @@
 
-const notesData = require("../db/db.json");
-
+let notesData = require("../db/db.json");
+const fs = require("fs");
 // ===============================================================================
 // ROUTING
 // ===============================================================================
@@ -11,44 +11,78 @@ module.exports = function(app) {
   // In each of the below cases when a user visits a link
   // (ex: localhost:PORT/api/admin... they are shown a JSON of the data in the table)
   // ---------------------------------------------------------------------------
-  app.get("/api/notes", function(req, res) {
+  app.get("/api/notes", function(err, res) {
+    try {
+      // reads the notes from json file
+      notesData = fs.readFileSync("/db/db.json", "utf8");
+      console.log("hello!");
+      // parse it so notesData is an array of objects
+      notesData = JSON.parse(notesData);
+  
+      // error handling
+    } catch (err) {
+      console.log("\n error (in app.get.catch):");
+      console.log(err);
+    }
+    //   send objects to the browser
     res.json(notesData);
   });
-
-  app.get("/api/waitlist", function(req, res) {
-    res.json(waitListData);
-  });
-
-  // API POST Requests
-  // Below code handles when a user submits a form and thus submits data to the server.
-  // In each of the below cases, when a user submits form data (a JSON object)
-  // ...the JSON is pushed to the appropriate JavaScript array
-  // (ex. User fills out a reservation request... this data is then sent to the server...
-  // Then the server saves the data to the tableData array)
-  // ---------------------------------------------------------------------------
-  app.post("/api/tables", function(req, res) {
-    // Note the code here. Our "server" will respond to requests and let users know if they have a table or not.
-    // It will do this by sending out the value "true" have a table
-    // req.body is available since we're using the body parsing middleware
-    if (tableData.length < 5) {
-      tableData.push(req.body);
-      res.json(true);
+  
+  app.post("/api/notes", function(req, res) {
+    try {
+      // reads the json file
+      notesData = fs.readFileSync("./db/db.json", "utf8");
+      console.log(notesData);
+  
+      // parse the data to get an array of objects
+      notesData = JSON.parse(notesData);
+      // Set new notes id
+      req.body.id = notesData.length;
+      // add the new note to the array of note objects
+      notesData.push(req.body); // req.body - user input
+      // make it string(stringify)so you can write it to the file
+      notesData = JSON.stringify(notesData);
+      // writes the new note to file
+      fs.writeFile("./db/db.json", notesData, "utf8", function(err) {
+        // error handling
+        if (err) throw err;
+      });
+      // changeit back to an array of objects & send it back to the browser(client)
+      res.json(JSON.parse(notesData));
+  
+      // error Handling
+    } catch (err) {
+      throw err;
+      console.error(err);
     }
-    else {
-      waitListData.push(req.body);
-      res.json(false);
+  });
+
+  app.delete("/api/notes/:id", function(req, res) {
+    try {
+      //  reads the json file
+      notesData = fs.readFileSync("./db/db.json", "utf8");
+      // parse the data to get an array of the objects
+      notesData = JSON.parse(notesData);
+      // delete the old note from the array on note objects
+      notesData = notesData.filter(function(note) {
+        return note.id != req.params.id;
+      });
+      // make it string(stringify)so you can write it to the file
+      notesData = JSON.stringify(notesData);
+      // write the new notes to the file
+      fs.writeFile("./db/db.json", notesData, "utf8", function(err) {
+        // error handling
+        if (err) throw err;
+      });
+  
+      // change it back to an array of objects & send it back to the browser (client)
+      res.send(JSON.parse(notesData));
+  
+      // error handling
+    } catch (err) {
+      throw err;
+      console.log(err);
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // I added this below code so you could clear out the table while working with the functionality.
-  // Don"t worry about it!
-
-  app.post("/api/clear", function(req, res) {
-    // Empty out the arrays of data
-    tableData.length = 0;
-    waitListData.length = 0;
-
-    res.json({ ok: true });
-  });
-};
+}
