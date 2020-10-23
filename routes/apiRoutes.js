@@ -14,7 +14,7 @@ module.exports = function(app) {
   app.get("/api/notes", function(err, res) {
     try {
       // reads the notes from json file
-      notesData = fs.readFileSync("/db/db.json", "utf8");
+      notesData = fs.readFileSync("./db/db.json", "utf8");
       console.log("hello!");
       // parse it so notesData is an array of objects
       notesData = JSON.parse(notesData);
